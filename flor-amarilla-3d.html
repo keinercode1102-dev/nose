@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Una flor para ti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --bg-top:#241129;
+    --bg-bottom:#5c2b4e;
+    --petal:#ffce3d;
+    --petal-shadow:#e2a02c;
+    --cream:#fff6e6;
+    --pink:#f4a6c1;
+    --dim:#d9c3d6;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:var(--bg-bottom);
+    font-family:'Jost',sans-serif;
+  }
+  body{
+    position:relative;
+    width:100%;
+    background:
+      radial-gradient(ellipse at 50% 15%, #7a3a63 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg-top) 0%, var(--bg-bottom) 55%, #3a1a35 100%);
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+  }
+
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  #petals-fall{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+  .falling-petal{
+    position:absolute;
+    top:-40px;
+    width:14px;
+    height:20px;
+    background:var(--petal);
+    border-radius:0 100% 0 100%;
+    opacity:0;
+    animation-name:fall;
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+  }
+  @keyframes fall{
+    0%{ transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    8%{ opacity:.85; }
+    92%{ opacity:.7; }
+    100%{ transform:translateY(110vh) translateX(var(--drift,30px)) rotate(340deg); opacity:0; }
+  }
+
+  section{
+    position:relative;
+    z-index:2;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:2rem 1.5rem;
+  }
+
+  #hero{
+    min-height:100vh;
+    min-height:100svh;
+    justify-content:center;
+    padding-bottom:3rem;
+  }
+
+  #scene-wrap{
+    position:relative;
+    width:min(88vw, 520px);
+    height:min(50vh, 460px);
+    touch-action:none;
+  }
+  #canvas-holder{width:100%;height:100%;cursor:grab;}
+  #canvas-holder:active{cursor:grabbing;}
+
+  #text-block{
+    text-align:center;
+    max-width:560px;
+    margin-top:0.5rem;
+  }
+
+  #name{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(1.9rem, 6vw, 2.8rem);
+    color:var(--petal);
+    outline:none;
+    border-bottom:1px dashed rgba(255,206,61,.35);
+    display:inline-block;
+    min-width:2ch;
+    padding-bottom:2px;
+  }
+  #name:focus{border-bottom-color:rgba(255,206,61,.8);}
+
+  #headline{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-size:clamp(1.1rem, 3.4vw, 1.4rem);
+    color:var(--cream);
+    margin:.6rem 0 0;
+    line-height:1.35;
+  }
+
+  #open-btn{
+    margin-top:1.6rem;
+    background:transparent;
+    border:1px solid rgba(255,206,61,.55);
+    color:var(--petal);
+    font-family:'Jost',sans-serif;
+    letter-spacing:.04em;
+    font-size:.85rem;
+    padding:.7rem 1.8rem;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .35s ease, color .35s ease, transform .2s ease;
+  }
+  #open-btn:hover{background:rgba(255,206,61,.12); transform:translateY(-1px);}
+  #open-btn:focus-visible{outline:2px solid var(--petal); outline-offset:3px;}
+  #open-btn.hidden{display:none;}
+
+  .reveal{
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity 1s ease, transform 1s ease;
+  }
+  .reveal.show{opacity:1; transform:translateY(0);}
+
+  #scroll-cue{
+    margin-top:2.2rem;
+    font-size:.7rem;
+    letter-spacing:.08em;
+    color:var(--dim);
+    opacity:.6;
+  }
+
+  /* ---- message section ---- */
+  #message{
+    max-width:540px;
+    text-align:center;
+    padding-top:1rem;
+  }
+  #message h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-style:italic;
+    font-size:clamp(1.5rem, 4.5vw, 2rem);
+    color:var(--petal);
+    margin:0 0 1rem;
+  }
+  #love-note{
+    font-size:1rem;
+    line-height:1.85;
+    color:var(--cream);
+    outline:none;
+    border-bottom:1px dashed transparent;
+  }
+  #love-note:focus{border-bottom-color:rgba(255,246,230,.3);}
+
+  /* ---- reasons grid ---- */
+  #reasons{
+    max-width:640px;
+    width:100%;
+    padding-top:1rem;
+  }
+  #reasons h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-style:italic;
+    font-size:clamp(1.5rem, 4.5vw, 2rem);
+    color:var(--petal);
+    text-align:center;
+    margin:0 0 1.8rem;
+  }
+  .reasons-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:1rem 1.4rem;
+    width:100%;
+  }
+  .reason{
+    background:rgba(255,246,230,.05);
+    border:1px solid rgba(255,206,61,.18);
+    border-radius:14px;
+    padding:1rem 1.1rem;
+    font-size:.88rem;
+    line-height:1.5;
+    color:var(--dim);
+    outline:none;
+  }
+  .reason:focus{border-color:rgba(255,206,61,.5); color:var(--cream);}
+  @media (max-width:520px){
+    .reasons-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---- footer ---- */
+  #footer{
+    padding:3rem 1.5rem 4rem;
+    text-align:center;
+  }
+  #footer .heart-line{
+    font-size:1.3rem;
+    color:var(--pink);
+    margin-bottom:.6rem;
+  }
+  #footer .date{
+    font-size:.75rem;
+    letter-spacing:.05em;
+    color:var(--dim);
+    opacity:.65;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * {animation-duration:.001ms !important; transition-duration:.001ms !important;}
+    .falling-petal{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div id="petals-fall"></div>
+
+<section id="hero">
+  <div id="scene-wrap">
+    <div id="canvas-holder"></div>
+  </div>
+
+  <div id="text-block">
+    <button id="open-btn">ábrela</button>
+    <p id="headline" class="reveal">Para <span id="name" contenteditable="true" spellcheck="false">Juliana</span>, una flor que no se marchita.</p>
+  </div>
+
+  <div id="scroll-cue" class="reveal">sigue bajando ↓</div>
+</section>
+
+<section id="message">
+  <h2 class="reveal">Un mensaje para ti</h2>
+  <p id="love-note" class="reveal" contenteditable="true" spellcheck="false">Elegí una flor amarilla porque me recuerda a ti: alegre, cálida y capaz de iluminar cualquier día gris. Esta no se marchita ni se olvida en un jarrón, así que la dejo aquí, girando, para que la abras cuando quieras recordar cuánto significas para mí. Toca este texto si quieres escribir tus propias palabras.</p>
+</section>
+
+<section id="reasons">
+  <h2 class="reveal">Algunas razones</h2>
+  <div class="reasons-grid">
+    <div class="reason reveal" contenteditable="true" spellcheck="false">Por tu risa, que hace mejor cualquier lugar.</div>
+    <div class="reason reveal" contenteditable="true" spellcheck="false">Por cómo cuidas a quienes quieres.</div>
+    <div class="reason reveal" contenteditable="true" spellcheck="false">Por cada plan pequeño que se vuelve especial contigo.</div>
+    <div class="reason reveal" contenteditable="true" spellcheck="false">Por ser exactamente tú, sin pretender ser otra cosa.</div>
+  </div>
+</section>
+
+<section id="footer">
+  <div class="heart-line reveal">🌼</div>
+  <div class="date reveal" id="footer-date"></div>
+</section>
+
+<script>
+(function(){
+  // ---- starry background ----
+  var starCanvas = document.getElementById('stars');
+  var sctx = starCanvas.getContext('2d');
+  var stars = [];
+  function sizeStars(){
+    starCanvas.width = window.innerWidth * devicePixelRatio;
+    starCanvas.height = window.innerHeight * devicePixelRatio;
+    starCanvas.style.width = window.innerWidth + 'px';
+    starCanvas.style.height = window.innerHeight + 'px';
+    stars = [];
+    var count = Math.floor((window.innerWidth * window.innerHeight) / 9000);
+    for(var i=0;i<count;i++){
+      stars.push({
+        x: Math.random()*starCanvas.width,
+        y: Math.random()*starCanvas.height,
+        r: (Math.random()*1.4+0.3) * devicePixelRatio,
+        a: Math.random()*0.6+0.15,
+        speed: Math.random()*0.015+0.003,
+        phase: Math.random()*Math.PI*2
+      });
+    }
+  }
+  function drawStars(t){
+    sctx.clearRect(0,0,starCanvas.width, starCanvas.height);
+    for(var i=0;i<stars.length;i++){
+      var s = stars[i];
+      var tw = Math.sin(t*s.speed + s.phase)*0.4 + 0.6;
+      sctx.beginPath();
+      sctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      sctx.fillStyle = 'rgba(255,246,230,' + (s.a*tw).toFixed(3) + ')';
+      sctx.fill();
+    }
+    requestAnimationFrame(drawStars);
+  }
+  sizeStars();
+  requestAnimationFrame(drawStars);
+  window.addEventListener('resize', sizeStars);
+
+  // ---- falling petals ----
+  var fallWrap = document.getElementById('petals-fall');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduceMotion){
+    var N = 16;
+    for(var i=0;i<N;i++){
+      var p = document.createElement('div');
+      p.className = 'falling-petal';
+      var left = Math.random()*100;
+      var dur = 9 + Math.random()*10;
+      var delay = Math.random()*14;
+      var drift = (Math.random()*80 - 40) + 'px';
+      p.style.left = left + 'vw';
+      p.style.animationDuration = dur + 's';
+      p.style.animationDelay = delay + 's';
+      p.style.setProperty('--drift', drift);
+      p.style.opacity = '0';
+      p.style.background = (i % 3 === 0) ? '#e2a02c' : '#ffce3d';
+      fallWrap.appendChild(p);
+    }
+  }
+
+  // ---- persistence helpers (per-viewer only) ----
+  function persistField(el, key, fallback){
+    try{
+      var saved = localStorage.getItem(key);
+      if(saved) el.textContent = saved;
+    }catch(e){}
+    el.addEventListener('blur', function(){
+      var v = el.textContent.trim() || fallback;
+      el.textContent = v;
+      try{ localStorage.setItem(key, v); }catch(e){}
+    });
+    el.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' && el.id === 'name'){ ev.preventDefault(); el.blur(); }
+    });
+  }
+  persistField(document.getElementById('name'), 'flor-nombre', 'Juliana');
+  persistField(document.getElementById('love-note'), 'flor-nota', document.getElementById('love-note').textContent.trim());
+  var reasonEls = document.querySelectorAll('.reason');
+  reasonEls.forEach(function(el, idx){
+    persistField(el, 'flor-razon-' + idx, el.textContent.trim());
+  });
+
+  // ---- footer date ----
+  document.getElementById('footer-date').textContent = '21 de septiembre de 2026';
+
+  // ---- scroll reveal ----
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('show');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.2});
+    revealEls.forEach(function(el){ io.observe(el); });
+  }else{
+    revealEls.forEach(function(el){ el.classList.add('show'); });
+  }
+
+  // ---- three.js scene ----
+  var holder = document.getElementById('canvas-holder');
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  camera.position.set(0, 1.1, 9.5);
+
+  var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  holder.appendChild(renderer.domElement);
+
+  function resizeRenderer(){
+    var w = holder.clientWidth, h = holder.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resizeRenderer);
+
+  scene.add(new THREE.AmbientLight(0xfff0d0, 0.55));
+  var key = new THREE.DirectionalLight(0xfff2cf, 1.05);
+  key.position.set(4, 6, 5);
+  scene.add(key);
+  var rim = new THREE.DirectionalLight(0xf4a6c1, 0.5);
+  rim.position.set(-5, 2, -4);
+  scene.add(rim);
+  var fill = new THREE.PointLight(0xffcf6e, 0.4, 20);
+  fill.position.set(0, -3, 4);
+  scene.add(fill);
+
+  var flowerGroup = new THREE.Group();
+  scene.add(flowerGroup);
+
+  function makePetalGeometry(){
+    var shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.bezierCurveTo(0.42, 0.25, 0.5, 1.15, 0, 1.85);
+    shape.bezierCurveTo(-0.5, 1.15, -0.42, 0.25, 0, 0);
+    var geo = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.06,
+      bevelEnabled: true,
+      bevelThickness: 0.02,
+      bevelSize: 0.02,
+      bevelSegments: 2,
+      curveSegments: 12
+    });
+    geo.translate(0, 0, -0.03);
+    return geo;
+  }
+  var petalGeo = makePetalGeometry();
+  var petalMat = new THREE.MeshStandardMaterial({ color: 0xffce3d, roughness: 0.55, side: THREE.DoubleSide });
+  var petalMatInner = new THREE.MeshStandardMaterial({ color: 0xe2a02c, roughness: 0.6, side: THREE.DoubleSide });
+
+  var petals = [];
+  var PETAL_COUNT = 15;
+  for(var i=0;i<PETAL_COUNT;i++){
+    var pivot = new THREE.Group();
+    pivot.rotation.y = (i / PETAL_COUNT) * Math.PI * 2;
+    var mesh = new THREE.Mesh(petalGeo, i % 2 === 0 ? petalMat : petalMatInner);
+    mesh.position.set(0, 0, 0.55);
+    mesh.rotation.x = -0.55;
+    mesh.scale.setScalar(0.001);
+    pivot.add(mesh);
+    flowerGroup.add(pivot);
+    petals.push(mesh);
+  }
+  var PETAL_COUNT2 = 12;
+  for(var j=0;j<PETAL_COUNT2;j++){
+    var pivot2 = new THREE.Group();
+    pivot2.rotation.y = (j / PETAL_COUNT2) * Math.PI * 2 + 0.25;
+    var mesh2 = new THREE.Mesh(petalGeo, petalMat);
+    mesh2.position.set(0, 0.05, 0.32);
+    mesh2.rotation.x = -0.9;
+    mesh2.scale.set(0.001, 0.001, 0.001);
+    pivot2.add(mesh2);
+    flowerGroup.add(pivot2);
+    petals.push(mesh2);
+  }
+
+  var centerGeo = new THREE.IcosahedronGeometry(0.62, 3);
+  var posAttr = centerGeo.attributes.position;
+  for(var k=0;k<posAttr.count;k++){
+    var vx = posAttr.getX(k), vy = posAttr.getY(k), vz = posAttr.getZ(k);
+    var n = (Math.sin(vx*18)+Math.cos(vy*18)+Math.sin(vz*18)) * 0.012;
+    var len = Math.sqrt(vx*vx+vy*vy+vz*vz) || 1;
+    posAttr.setXYZ(k, vx + (vx/len)*n, vy + (vy/len)*n, vz + (vz/len)*n);
+  }
+  centerGeo.computeVertexNormals();
+  centerGeo.scale(1, 0.62, 1);
+  var centerMat = new THREE.MeshStandardMaterial({ color: 0x7a4a22, roughness: 0.9, metalness: 0.05 });
+  var centerMesh = new THREE.Mesh(centerGeo, centerMat);
+  centerMesh.scale.setScalar(0.001);
+  flowerGroup.add(centerMesh);
+
+  var stemCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, -0.3, 0),
+    new THREE.Vector3(0.15, -1.8, 0.05),
+    new THREE.Vector3(-0.1, -3.4, -0.05),
+    new THREE.Vector3(0.1, -4.9, 0)
+  ]);
+  var stemGeo = new THREE.TubeGeometry(stemCurve, 40, 0.075, 8, false);
+  var stemMat = new THREE.MeshStandardMaterial({ color: 0x4c7a3d, roughness: 0.7 });
+  var stemMesh = new THREE.Mesh(stemGeo, stemMat);
+  flowerGroup.add(stemMesh);
+
+  function leafShape(){
+    var s = new THREE.Shape();
+    s.moveTo(0,0);
+    s.bezierCurveTo(0.55, 0.35, 0.75, 1.2, 0, 1.9);
+    s.bezierCurveTo(-0.75, 1.2, -0.55, 0.35, 0, 0);
+    return new THREE.ExtrudeGeometry(s, {depth:0.04, bevelEnabled:false, curveSegments:10});
+  }
+  var leafGeo = leafShape();
+  var leafMat = new THREE.MeshStandardMaterial({ color:0x568a44, roughness:0.7, side:THREE.DoubleSide });
+
+  var leaf1 = new THREE.Mesh(leafGeo, leafMat);
+  leaf1.position.set(0.12, -2.1, 0.03);
+  leaf1.rotation.set(0.3, 0, 0.9);
+  leaf1.scale.setScalar(0.85);
+  flowerGroup.add(leaf1);
+
+  var leaf2 = new THREE.Mesh(leafGeo, leafMat);
+  leaf2.position.set(-0.1, -3.0, -0.02);
+  leaf2.rotation.set(-0.2, 0, -1.05);
+  leaf2.scale.setScalar(0.7);
+  flowerGroup.add(leaf2);
+
+  flowerGroup.position.y = 0.9;
+  flowerGroup.rotation.x = 0.08;
+
+  var isDragging = false, prevX = 0, prevY = 0;
+  var targetRotY = 0, targetRotX = 0.08;
+  var currentRotY = 0, currentRotX = 0.08;
+  var autoRotate = true;
+
+  function pointerDown(x,y){ isDragging = true; autoRotate = false; prevX = x; prevY = y; }
+  function pointerMove(x,y){
+    if(!isDragging) return;
+    var dx = x - prevX, dy = y - prevY;
+    targetRotY += dx * 0.008;
+    targetRotX += dy * 0.006;
+    targetRotX = Math.max(-0.5, Math.min(0.7, targetRotX));
+    prevX = x; prevY = y;
+  }
+  function pointerUp(){ isDragging = false; }
+
+  holder.addEventListener('mousedown', function(e){ pointerDown(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', function(e){ pointerMove(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', pointerUp);
+  holder.addEventListener('touchstart', function(e){ var t = e.touches[0]; pointerDown(t.clientX, t.clientY); }, {passive:true});
+  holder.addEventListener('touchmove', function(e){ var t = e.touches[0]; pointerMove(t.clientX, t.clientY); }, {passive:true});
+  holder.addEventListener('touchend', pointerUp);
+
+  var bloomStart = null;
+  var BLOOM_DUR = 1600;
+  function easeOutBack(t){
+    var c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+  var clock = new THREE.Clock();
+
+  function animate(t){
+    requestAnimationFrame(animate);
+    var elapsed = clock.getElapsedTime();
+
+    if(bloomStart !== null){
+      var p = Math.min(1, (t - bloomStart) / BLOOM_DUR);
+      var centerP = easeOutCubic(Math.min(1, p / 0.4));
+      centerMesh.scale.setScalar(0.001 + centerP * 0.999);
+      for(var i=0;i<petals.length;i++){
+        var delay = 0.15 + (i / petals.length) * 0.5;
+        var pp = Math.max(0, Math.min(1, (p - delay) / (1 - delay)));
+        var s = 0.001 + easeOutBack(pp) * 0.999;
+        petals[i].scale.setScalar(Math.max(0.001, s));
+      }
+      if(p >= 1) bloomStart = null;
+    }
+
+    if(autoRotate){ targetRotY += 0.0022; }
+    currentRotY += (targetRotY - currentRotY) * 0.08;
+    currentRotX += (targetRotX - currentRotX) * 0.08;
+    flowerGroup.rotation.y = currentRotY;
+    flowerGroup.rotation.x = currentRotX;
+    flowerGroup.position.y = 0.9 + Math.sin(elapsed * 0.7) * 0.05;
+
+    renderer.render(scene, camera);
+  }
+
+  resizeRenderer();
+  requestAnimationFrame(animate);
+
+  var openBtn = document.getElementById('open-btn');
+  openBtn.addEventListener('click', function(){
+    bloomStart = performance.now();
+    openBtn.classList.add('hidden');
+    document.getElementById('headline').classList.add('show');
+    document.getElementById('scroll-cue').classList.add('show');
+  });
+
+})();
+</script>
+</body>
+</html>
